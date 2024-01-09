@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>Home</title>
+    <title>Compare pictures and share easily</title>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
     <script
@@ -42,11 +42,11 @@
           opacity: 0;
         }
       }
-      section {
+      section.crossfade {
         position: relative;
       }
 
-      section img {
+      section.crossfade img {
         position: absolute;
       }
     </style>
@@ -58,8 +58,8 @@
 
       function udpateImages() {
         const hash = new URL(location).hash;
-        const before = regexp.before.exec(hash)?.[1];
-        const after = regexp.after.exec(hash)?.[1];
+        const before = regexp.before.exec(hash)?.[0];
+        const after = regexp.after.exec(hash)?.[0];
         if (before) {
           document.querySelector("#slider-before").src = atob(before);
           document.querySelector("#crossfade-before").src = atob(before);
@@ -102,7 +102,7 @@
       function updateAfter() {
         previewFile("after");
       }
-      udpateImages();
+      document.addEventListener("DOMContentLoaded", udpateImages);
     </script>
   </head>
   <body>
@@ -125,14 +125,14 @@
         />
       </form>
     </section>
-    <section>
+    <section id="slider">
       <h2>Slider</h2>
       <img-comparison-slider>
-        <img id="slider-before" slot="first" />
-        <img id="slider-after" slot="second" />
+        <img slot="first" id="slider-before" />
+        <img slot="second" id="slider-after" />
       </img-comparison-slider>
     </section>
-    <section>
+    <section class="crossfade">
       <h2>Crossfade</h2>
       <img id="crossfade-before" class="bottom" />
       <img id="crossfade-after" class="top" />
