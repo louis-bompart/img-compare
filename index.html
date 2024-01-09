@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Home</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/image-compare-viewer/dist/image-compare-viewer.min.css"
+    />
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/img-comparison-slider@8/dist/index.js"
+    ></script>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/img-comparison-slider@8/dist/styles.css"
+    />
+    <style type="text/css">
+      img-comparison-slider {
+        --divider-width: 2px;
+        --divider-color: #000000;
+        --default-handle-color: #000000;
+      }
+    </style>
+    <style type="text/css">
+      .top {
+        animation-name: fade;
+        animation-timing-function: ease-in-out;
+        animation-iteration-count: infinite;
+        animation-duration: 1s;
+        animation-direction: alternate;
+      }
+
+      @keyframes fade {
+        0% {
+          opacity: 1;
+        }
+        25% {
+          opacity: 1;
+        }
+        75% {
+          opacity: 0;
+        }
+        100% {
+          opacity: 0;
+        }
+      }
+      section {
+        position: relative;
+      }
+
+      section img {
+        position: absolute;
+      }
+    </style>
+    <script>
+      function udpateImages() {
+        const url = new URL(location);
+        const before = url.searchParams.get("before");
+        const after = url.searchParams.get("after");
+        if (before) {
+          document.querySelector("#slider-before").src = atob(before);
+          document.querySelector("#crossfade-before").src = atob(before);
+        }
+        if (after) {
+          document.querySelector("#slider-after").src = atob(after);
+          document.querySelector("#crossfade-after").src = atob(after);
+        }
+      }
+
+      function previewFile(id) {
+        const file = document.querySelector(`#${id}`).files[0];
+        const reader = new FileReader();
+
+        reader.addEventListener(
+          "load",
+          () => {
+            // convert image file to base64 string
+            const url = new URL(location);
+            url.searchParams.set(id, btoa(reader.result));
+            history.pushState({}, "", url);
+            udpateImages();
+          },
+          false,
+        );
+
+        if (file) {
+          reader.readAsDataURL(file);
+        }
+      }
+
+      function updateBefore() {
+        previewFile("before");
+      }
+
+      function updateAfter() {
+        previewFile("after");
+      }
+      udpateImages();
+    </script>
+  </head>
+  <body>
+    <section>
+      <h2>Inputs</h2>
+      <form>
+        <input
+          type="file"
+          id="before"
+          name="before"
+          accept="image/*"
+          onchange="updateBefore()"
+        />
+        <input
+          type="file"
+          id="after"
+          name="after"
+          accept="image/*"
+          onchange="updateAfter()"
+        />
+      </form>
+    </section>
+    <section>
+      <h2>Slider</h2>
+      <img-comparison-slider>
+        <img id="slider-before" slot="first" />
+        <img id="slider-after" slot="second" />
+      </img-comparison-slider>
+    </section>
+    <section>
+      <h2>Crossfade</h2>
+      <img id="crossfade-before" class="bottom" />
+      <img id="crossfade-after" class="top" />
+    </section>
+  </body>
+</html>
