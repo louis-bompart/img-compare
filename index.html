@@ -1,13 +1,9 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <title>Home</title>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
-    <link
-      rel="stylesheet"
-      href="https://unpkg.com/image-compare-viewer/dist/image-compare-viewer.min.css"
-    />
     <script
       defer
       src="https://cdn.jsdelivr.net/npm/img-comparison-slider@8/dist/index.js"
@@ -55,10 +51,15 @@
       }
     </style>
     <script>
+      const regexp = {
+        before: /(?<=&&before&&)[A-Za-z0-9+/=]*(?=&&)/,
+        after: /(?<=&&after&&)[A-Za-z0-9+/=]*(?=&&)/,
+      };
+
       function udpateImages() {
-        const url = new URL(location);
-        const before = url.hash.get("before");
-        const after = url.hash.get("after");
+        const hash = new URL(location).hash;
+        const before = regexp.before.exec(hash)?.[1];
+        const after = regexp.after.exec(hash)?.[1];
         if (before) {
           document.querySelector("#slider-before").src = atob(before);
           document.querySelector("#crossfade-before").src = atob(before);
@@ -78,11 +79,15 @@
           () => {
             // convert image file to base64 string
             const url = new URL(location);
-            url.hash.set(id, btoa(reader.result));
+            if (regexp[id].test(url.hash.test)) {
+              url.hash.replace(regexp[id], btoa(reader.result));
+            } else {
+              url.hash += `&&${id}&&${btoa(reader.result)}&&`;
+            }
             history.pushState({}, "", url);
             udpateImages();
           },
-          false,
+          false
         );
 
         if (file) {
