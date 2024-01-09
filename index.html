@@ -12,6 +12,10 @@
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/img-comparison-slider@8/dist/styles.css"
     />
+    <style type="text/css" id="cssVarBefore">
+    </style>
+    <style type="text/css" id="cssVarAfter">
+    </style>
     <style type="text/css">
       img-comparison-slider {
         --divider-width: 2px;
@@ -20,35 +24,43 @@
       }
     </style>
     <style type="text/css">
-      .top {
+      .crossfade {
         animation-name: fade;
         animation-timing-function: ease-in-out;
         animation-iteration-count: infinite;
         animation-duration: 1s;
         animation-direction: alternate;
+        width: max(var(--before-width), var(--after-width),0px);
+        height: max(var(--before-height), var(--after-height),0px);
       }
 
       @keyframes fade {
         0% {
-          opacity: 1;
+          background-image: crossfade(var(--before),var(--after),0%);
+          background-image: -webkit-cross-fade(var(--before),var(--after),0%);
         }
         25% {
-          opacity: 1;
+            background-image: crossfade(var(--before),var(--after),25%);
+            background-image: -webkit-cross-fade(var(--before),var(--after),25%);
         }
         75% {
-          opacity: 0;
+            background-image: crossfade(var(--before),var(--after),75%);
+            background-image: -webkit-cross-fade(var(--before),var(--after),75%);
         }
         100% {
-          opacity: 0;
+            background-image: crossfade(var(--before),var(--after),100%);
+            background-image: -webkit-cross-fade(var(--before),var(--after),100%);
         }
       }
-      section.crossfade {
-        position: relative;
-      }
-
-      section.crossfade img {
+    </style>
+    <style>
+      :popover-open {
         position: absolute;
+        inset: unset;
+        right: 5px;
+        bottom: 5px;
       }
+    
     </style>
     <script>
       const regexp = {
@@ -56,17 +68,31 @@
         after: /(?<=&&after&&)[A-Za-z0-9+/=]*(?=&&)/,
       };
 
-      function udpateImages() {
+      async function getImgSize(imgSrc) {
+        return new Promise(resolve => {
+            const img = new Image();
+            img.onload = function() {
+                resolve({width: this.width, height: this.height});
+            }
+            img.src = imgSrc;
+        });
+      }
+
+      async function udpateImages() {
         const hash = new URL(location).hash;
         const before = regexp.before.exec(hash)?.[0];
         const after = regexp.after.exec(hash)?.[0];
+
         if (before) {
+        const {width: beforeWidth, height: beforeHeight} = await getImgSize(atob(before));
           document.querySelector("#slider-before").src = atob(before);
-          document.querySelector("#crossfade-before").src = atob(before);
+          document.querySelector("#cssVarBefore").innerHTML=`:root {--before: url("${atob(before)}"); --before-width:${beforeWidth}px; --before-height:${beforeHeight}px;}`;
         }
         if (after) {
+        const {width: afterWidth, height: afterHeight} = await getImgSize(atob(after));
+
           document.querySelector("#slider-after").src = atob(after);
-          document.querySelector("#crossfade-after").src = atob(after);
+          document.querySelector("#cssVarAfter").innerHTML=`:root {--after: url("${atob(after)}"); --after-width:${afterWidth}px; --after-height:${afterHeight}px;}`;
         }
       }
 
@@ -104,11 +130,71 @@
       }
       document.addEventListener("DOMContentLoaded", udpateImages);
     </script>
+    <script>
+        // From: https://mdn.github.io/dom-examples/popover-api/toast-popovers/index.js
+        function makeToast() {
+        // Create an element and make it into a popover
+        const popover = document.createElement("article");
+        popover.popover = "manual";
+        popover.classList.add("toast");
+        popover.classList.add("newest");
+
+        let msg="Url copied to clipboard";
+
+        // Give the toast its text content, and add it to the DOM
+        popover.textContent = msg;
+        document.body.appendChild(popover);
+
+        // Show the popover
+        popover.showPopover();
+
+        // Update the counter paragraph
+        updateCounter();
+
+        // Remove the toast again after 4 seconds
+        setTimeout(() => {
+            popover.hidePopover();
+            popover.remove();
+        }, 4000);
+
+        // When a new toast appears, run the movetoastsUp() function
+        popover.addEventListener("toggle", (event) => {
+            if (event.newState === "open") {
+            moveToastsUp();
+            }
+        });
+        }
+
+        function moveToastsUp() {
+        const toasts = document.querySelectorAll(".toast");
+
+        toasts.forEach((toast) => {
+            // If the toast is the one that has just appeared, we don't want it to move up.
+            if (toast.classList.contains("newest")) {
+            toast.style.bottom = `5px`;
+            toast.classList.remove("newest");
+            } else {
+            // Move up all the other toasts by 50px to make way for the new one
+            const prevValue = toast.style.bottom.replace("px", "");
+            const newValue = parseInt(prevValue) + 50;
+            toast.style.bottom = `${newValue}px`;
+            }
+        });
+        }
+
+
+        function copyUrlToClipboard() {
+            const url = new URL(location);
+            navigator.clipboard.writeText(url.href);
+            makeToast();
+        }
+    </script>
   </head>
   <body>
     <section>
       <h2>Inputs</h2>
       <form>
+        <label for="before">Before picture:</label>
         <input
           type="file"
           id="before"
@@ -116,6 +202,7 @@
           accept="image/*"
           onchange="updateBefore()"
         />
+        <label for="after">After picture:</label>
         <input
           type="file"
           id="after"
@@ -132,10 +219,21 @@
         <img slot="second" id="slider-after" />
       </img-comparison-slider>
     </section>
-    <section class="crossfade">
+    <section>
       <h2>Crossfade</h2>
-      <img id="crossfade-before" class="bottom" />
-      <img id="crossfade-after" class="top" />
+        <div class="crossfade"></div>
+    </section>
+    <section>
+        <h2>Share</h2>
+        <button onclick="copyUrlToClipboard()">Share this comparison</button>
+    </section>
+    <section>
+        <h2>Sources</h2>
+        <ul>
+            <li><a href="https://github.com/louis-bompart/img-compare">This page</a></li>
+            <li><a href="https://github.com/sneas/img-comparison-slider">img-comparison-slider</a></li>
+            <li><a href="https://mdn.github.io/dom-examples/popover-api/toast-popovers">Native Toast</a></li>
+        <ul></ul>
     </section>
   </body>
 </html>
